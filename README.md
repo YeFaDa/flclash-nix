@@ -1,4 +1,4 @@
-# flclash-tun
+# flclash-nix
 
 把 [FlClash](https://github.com/chen08209/FlClash) 搬进 flake（上游 nixpkgs 已经把
 `flclash` 从 unstable 移除了，理由是 "low number of users and lack of maintenance"），
@@ -7,7 +7,7 @@
 ## 用法
 
 ```nix
-inputs.flclash-tun.url = "github:yefada/flclash-nix";
+inputs.flclash-nix.url = "github:yefada/flclash-nix";
 ```
 
 ```nix
