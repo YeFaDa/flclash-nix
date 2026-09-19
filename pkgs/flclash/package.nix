@@ -14,7 +14,7 @@
 
 let
   pname = "flclash";
-  version = "0.8.97";
+  version = "0.8.98";
 
   src = fetchFromGitHub {
     owner = "chen08209";
@@ -25,7 +25,7 @@ let
       export GIT_CONFIG_KEY_0=url.https://github.com/.insteadOf
       export GIT_CONFIG_VALUE_0=git@github.com:
     '';
-    hash = "sha256-1xEirGMhGZd8kiH+ikuzxkp7EGFCTAExvg3gAkpXFdY=";
+    hash = "sha256-GCNp5bC/1qBjPLNc4Rd3aJG+gJcPMe+jVnYrz4biP5o=";
     fetchSubmodules = true;
   };
 
@@ -80,6 +80,8 @@ let
 
     sourceRoot = "source/services/helper";
 
+    # 0.8.98 的 services/helper/{Cargo.toml,Cargo.lock} 与 0.8.97 逐字节一致，
+    # vendored 依赖集相同，hash 不变。
     cargoHash = "sha256-G2c59JGaO/pLBKRCIUT1F5EE6pmSlUoNEMFaeFVdgzk=";
 
     preBuild = ''
@@ -101,6 +103,7 @@ let
 
     sourceRoot = "source/plugins/rust_api/rust";
 
+    # 同上：Cargo.toml / Cargo.lock 与 0.8.97 完全一致，hash 不变。
     cargoHash = "sha256-Nbj+KNgQO8UeUnmURqLu7h7WZp+ipECCyqNQFfjtiVY=";
 
     # crate-type = ["cdylib", "staticlib"]，默认 installPhase（cargoInstallHook）
