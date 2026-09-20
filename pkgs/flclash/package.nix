@@ -181,7 +181,13 @@ flutter347.buildFlutterApplication {
 
   desktopItems = [
     (makeDesktopItem {
-      name = "flclash";
+      # 文件名必须匹配上游写死的 APPLICATION_ID（linux/CMakeLists.txt:
+      # set(APPLICATION_ID "com.follow.clash")）。my_application.cc 启动时
+      # g_set_prgname(APPLICATION_ID)，Wayland 的 app_id 与 X11 的 WM_CLASS
+      # 都由程序名派生；桌面环境靠它匹配 .desktop 文件名来取窗口/任务栏图标，
+      # 文件叫 flclash.desktop 就永远对不上，只显示通用图标。
+      # StartupWMClass 再兜底 X11 的 WM_CLASS 匹配。
+      name = "com.follow.clash";
       exec = "FlClash %U";
       icon = "flclash";
       genericName = "FlClash";
@@ -193,6 +199,8 @@ flutter347.buildFlutterApplication {
         "ClashMeta"
         "Proxy"
       ];
+      startupWMClass = "com.follow.clash";
+      startupNotify = true;
     })
   ];
 
