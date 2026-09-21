@@ -98,6 +98,24 @@ in
       '';
     };
 
+    trustedInterface = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        把 FlClash 的 TUN 接口加入 {option}`networking.firewall.trustedInterfaces`。
+
+        FlClash 的 TUN 网卡名默认取 {var}`appName`，即 `FlClash`
+        （lib/models/generated/clash_config.g.dart: `device ?? appName`）。
+        仅在 `tunMode = true` 时生效。
+
+        NixOS 防火墙默认规则其实不拦 TUN 回包（ESTABLISHED 放行 +
+        checkReversePath 默认 loose），这个选项是给自定义了严格 input
+        规则的用户兜底的。注意：如果你在 FlClash 设置里改过 TUN 网卡名，
+        这里就不会匹配，请关掉本选项并自行把新名字加进
+        {option}`networking.firewall.trustedInterfaces`。
+      '';
+    };
+
     owner = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = detectedOwner;
@@ -153,6 +171,10 @@ in
     # 注：NixOS 里 checkReversePath 的默认值本来就是 "loose"，这里写出来只是表态。
     # 真正有用的是下面那条断言 —— 用户显式设成 true/"strict" 时会被拦下。
     networking.firewall.checkReversePath = lib.mkIf cfg.tunMode (lib.mkDefault "loose");
+
+    # types.listOf 的 merge 是拼接语义，用户自己写的 trustedInterfaces 不会被覆盖。
+    networking.firewall.trustedInterfaces =
+      lib.mkIf (cfg.tunMode && cfg.trustedInterface) [ "FlClash" ];
 
     assertions = [
       {
