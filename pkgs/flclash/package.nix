@@ -1,5 +1,6 @@
 {
   lib,
+  callPackage,
   fetchFromGitHub,
   flutter347,
   keybinder3,
@@ -152,9 +153,14 @@ flutter347.buildFlutterApplication {
   #   cp: cannot create regular file 'linux/CMakeLists.txt': No such file or directory
   # 这里回退成默认行为（原样用 src），跟其它纯 Dart 包一样处理。
   # 可用的扩展点见 pkgs/build-support/dart/pub2nix/pubspec-lock.nix:137。
+  #
+  # sqlite3 也自持一份（sqlite3-flutter.nix）：nixpkgs 从 44a9189 起给它的构建器
+  # 加了 sqlcipher 支持，但哈希表只登记了 _3_5_0，而本包锁 3.5.1，查表落空直接
+  # throw 掉整次构建。上游至今未补，所以复制一份进来自己维护。
   customSourceBuilders = {
     sqlite3_flutter_libs = { src, ... }: src;
     sqlcipher_flutter_libs = { src, ... }: src;
+    sqlite3 = callPackage ./sqlite3-flutter.nix { };
   };
 
   nativeBuildInputs = [
