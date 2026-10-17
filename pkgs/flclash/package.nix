@@ -1,21 +1,21 @@
 {
   lib,
-  callPackage,
   fetchFromGitHub,
   flutter347,
   keybinder3,
   libayatana-appindicator,
-  buildGoModule,
+  buildGo127Module,
   rustPlatform,
   makeDesktopItem,
   copyDesktopItems,
   autoPatchelfHook,
   imagemagick,
+  libx11,
 }:
 
 let
   pname = "flclash";
-  version = "0.8.98";
+  version = "0.9.1";
 
   src = fetchFromGitHub {
     owner = "chen08209";
@@ -26,7 +26,7 @@ let
       export GIT_CONFIG_KEY_0=url.https://github.com/.insteadOf
       export GIT_CONFIG_VALUE_0=git@github.com:
     '';
-    hash = "sha256-GCNp5bC/1qBjPLNc4Rd3aJG+gJcPMe+jVnYrz4biP5o=";
+    hash = "sha256-XekHQmterOyjd8eYrDOF6+wNIzTSiyvmNrwp0UFzfDg=";
     fetchSubmodules = true;
   };
 
@@ -48,13 +48,17 @@ let
   # ------------------------------------------------------------------
 
   # Go 内核
-  core = buildGoModule {
+  core = buildGo127Module {
     pname = "core";
     inherit version src meta;
 
     modRoot = "core";
 
-    vendorHash = "sha256-m+VO6GJyaJmF/4SE/6PzlPI5EvP1XNlEl7gUoQ9c/FI=";
+    # 0.9.0 起 core/go.mod 要求 go >= 1.27.0。注意不能用 buildGoModule 再传
+    # go = go_1_27：module.nix 的 go 是 callPackage 已经填好的函数参数，
+    # 传进去只会变成 derivation 属性，vendor FOD 仍然用默认的 1.26.7。
+
+    vendorHash = "sha256-IZ0MkD74baaP5csqjrSqBDkf32+Ux39Vx8a8YdFUBsY=";
 
     env.CGO_ENABLED = 0;
 
@@ -81,9 +85,8 @@ let
 
     sourceRoot = "source/services/helper";
 
-    # 0.8.98 的 services/helper/{Cargo.toml,Cargo.lock} 与 0.8.97 逐字节一致，
-    # vendored 依赖集相同，hash 不变。
-    cargoHash = "sha256-G2c59JGaO/pLBKRCIUT1F5EE6pmSlUoNEMFaeFVdgzk=";
+    # 0.9.x 更新了 helper 的 Cargo 依赖，cargoHash 已按 0.9.1 重算。
+    cargoHash = "sha256-M7m+rs96S4CkQK/mnJ+5IcHXQKMl3Yp2bovdpwc+Nn4=";
 
     preBuild = ''
       export CORE_SHA256=$(${coreSha256Cmd})
@@ -104,8 +107,8 @@ let
 
     sourceRoot = "source/plugins/rust_api/rust";
 
-    # 同上：Cargo.toml / Cargo.lock 与 0.8.97 完全一致，hash 不变。
-    cargoHash = "sha256-Nbj+KNgQO8UeUnmURqLu7h7WZp+ipECCyqNQFfjtiVY=";
+    # 同上：按 0.9.1 的 Cargo.lock 重算。
+    cargoHash = "sha256-5ie8iNeumnThUHet6BULxlqEygVfbE+YoZ9SQxk9Lrc=";
 
     # crate-type = ["cdylib", "staticlib"]，默认 installPhase（cargoInstallHook）
     # 是按 bin 装的，这里只收编出来的 librust_api.so。
@@ -125,14 +128,13 @@ flutter347.buildFlutterApplication {
 
   # nixpkgs 会拿 pubspec.lock 里的 `sdks.dart` 当作**根包**的 language version
   # （pkgs/build-support/dart/build-dart-application/generators.nix:73）。但 pub 写进
-  # lock 的这个字段含义是"锁定后的依赖集要求的最低 SDK"（这里是 3.13），跟根包自己的
-  # 语言版本不是一回事。上游 `flutter pub get` 用的是 pubspec.yaml 里的
+  # lock 的这个字段含义是"锁定后的依赖集要求的最低 SDK"（0.9.1 是 3.13.2），跟根包
+  # 自己的语言版本不是一回事。上游 `flutter pub get` 用的是 pubspec.yaml 里的
   # `sdk: '>=3.10.0 <4.0.0'`，也就是 3.10。
   #
-  # 差了这 0.03 后果很硬：Dart 3.13 会把 FlClash 源码里
-  #   Color darken([final int amount = 10])   // 参数上写 final
-  # 直接判成编译错误 "Can't have modifier 'final' here."，3.10 下则容忍。
-  # 所以这里改回跟 pubspec.yaml 一致。
+  # 0.8.x 时这个差异会直接编译失败（Dart 3.13 不接受形参上的 final 修饰）。
+  # 0.9.1 重写主题后那段代码没了，但仍然按 pubspec.yaml 声明覆盖：
+  # lock 里的字段本来就不是干这个用的，照抄会让语言的版本语义偏掉。
   # （该字段只用于此，改它不影响依赖解析；各依赖包的语言版本由 pub2nix 从各自的
   #   pubspec 单独读取。）
   pubspecLock = lock // {
@@ -154,13 +156,10 @@ flutter347.buildFlutterApplication {
   # 这里回退成默认行为（原样用 src），跟其它纯 Dart 包一样处理。
   # 可用的扩展点见 pkgs/build-support/dart/pub2nix/pubspec-lock.nix:137。
   #
-  # sqlite3 也自持一份（sqlite3-flutter.nix）：nixpkgs 从 44a9189 起给它的构建器
-  # 加了 sqlcipher 支持，但哈希表只登记了 _3_5_0，而本包锁 3.5.1，查表落空直接
-  # throw 掉整次构建。上游至今未补，所以复制一份进来自己维护。
+  # sqlite3 不用自持了：nixpkgs 的构建器已登记 _3_7_0（本包锁的版本），用默认的。
   customSourceBuilders = {
     sqlite3_flutter_libs = { src, ... }: src;
     sqlcipher_flutter_libs = { src, ... }: src;
-    sqlite3 = callPackage ./sqlite3-flutter.nix { };
   };
 
   nativeBuildInputs = [
@@ -172,6 +171,8 @@ flutter347.buildFlutterApplication {
   buildInputs = [
     keybinder3
     libayatana-appindicator
+    # 0.9.0 起 linux/CMakeLists.txt 直接 pkg_check_modules(X11 REQUIRED)
+    libx11
   ];
 
   flutterBuildFlags = [ "--dart-define=APP_ENV=stable" ];
