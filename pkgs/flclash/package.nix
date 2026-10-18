@@ -66,7 +66,16 @@ let
       runHook preBuild
 
       mkdir -p $out/bin
-      go build -ldflags="-w -s" -tags=with_gvisor -o $out/bin/FlClashCore
+      # 0.9.0 起 Clash.Meta 的主包从 core/ 根目录挪到了 ./cmd/core。
+      # 继续 go build 根目录只会得到一个 ar 归档（!<arch>），helper 执行它
+      # 会报 "syntax error near unexpected token"，GUI 等 IPC 等到超时。
+      # 版本号也按上游 build_config.yaml 注入（上游 hook 用 -X 设这个符号）。
+      coreVersion=$(sed -n 's/^core_version: *//p' ../build_config.yaml | head -n1)
+      go build \
+        -ldflags="-w -s -X github.com/metacubex/mihomo/constant.Version=$coreVersion" \
+        -tags=with_gvisor \
+        -o $out/bin/FlClashCore \
+        ./cmd/core
 
       runHook postBuild
     '';
