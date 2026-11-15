@@ -15,7 +15,7 @@
 
 let
   pname = "flclash";
-  version = "0.9.1";
+  version = "0.9.3";
 
   src = fetchFromGitHub {
     owner = "chen08209";
@@ -26,7 +26,7 @@ let
       export GIT_CONFIG_KEY_0=url.https://github.com/.insteadOf
       export GIT_CONFIG_VALUE_0=git@github.com:
     '';
-    hash = "sha256-XekHQmterOyjd8eYrDOF6+wNIzTSiyvmNrwp0UFzfDg=";
+    hash = "sha256-HVyVBCmFzSAdp2NtPS8vIwqo67d/e0klgAHd/MbJzEg=";
     fetchSubmodules = true;
   };
 
@@ -58,7 +58,7 @@ let
     # go = go_1_27：module.nix 的 go 是 callPackage 已经填好的函数参数，
     # 传进去只会变成 derivation 属性，vendor FOD 仍然用默认的 1.26.7。
 
-    vendorHash = "sha256-IZ0MkD74baaP5csqjrSqBDkf32+Ux39Vx8a8YdFUBsY=";
+    vendorHash = "sha256-9rvq8PtXDxwORx80GBQa4CHIm2b3iDqWRkA55osiQl0=";
 
     env.CGO_ENABLED = 0;
 
@@ -117,7 +117,7 @@ let
     sourceRoot = "source/plugins/rust_api/rust";
 
     # 同上：按 0.9.1 的 Cargo.lock 重算。
-    cargoHash = "sha256-5ie8iNeumnThUHet6BULxlqEygVfbE+YoZ9SQxk9Lrc=";
+    cargoHash = "sha256-IWXqZxqjiV4frGpGeHSBvPPQWbr0tzzNDzp+9BQ0ZG4=";
 
     # crate-type = ["cdylib", "staticlib"]，默认 installPhase（cargoInstallHook）
     # 是按 bin 装的，这里只收编出来的 librust_api.so。
