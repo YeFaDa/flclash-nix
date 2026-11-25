@@ -1,7 +1,7 @@
 {
   lib,
   fetchFromGitHub,
-  flutter347,
+  flutter350,
   keybinder3,
   libayatana-appindicator,
   buildGo127Module,
@@ -11,11 +11,14 @@
   autoPatchelfHook,
   imagemagick,
   libx11,
+  pkg-config,
+  glib,
+  gtk3,
 }:
 
 let
   pname = "flclash";
-  version = "0.9.3";
+  version = "0.9.4";
 
   src = fetchFromGitHub {
     owner = "chen08209";
@@ -26,7 +29,7 @@ let
       export GIT_CONFIG_KEY_0=url.https://github.com/.insteadOf
       export GIT_CONFIG_VALUE_0=git@github.com:
     '';
-    hash = "sha256-HVyVBCmFzSAdp2NtPS8vIwqo67d/e0klgAHd/MbJzEg=";
+    hash = "sha256-SkefPGfdxB04wHcBg/Dg4ZZkvLjJb/LHzxtRe9u2reA=";
     fetchSubmodules = true;
   };
 
@@ -58,7 +61,7 @@ let
     # go = go_1_27：module.nix 的 go 是 callPackage 已经填好的函数参数，
     # 传进去只会变成 derivation 属性，vendor FOD 仍然用默认的 1.26.7。
 
-    vendorHash = "sha256-9rvq8PtXDxwORx80GBQa4CHIm2b3iDqWRkA55osiQl0=";
+    vendorHash = "sha256-FeSLlJ70KSiWFoZ61yyj9BoZTPHdv7lnwPBEnCmNElg=";
 
     env.CGO_ENABLED = 0;
 
@@ -116,8 +119,13 @@ let
 
     sourceRoot = "source/plugins/rust_api/rust";
 
-    # 同上：按 0.9.1 的 Cargo.lock 重算。
-    cargoHash = "sha256-IWXqZxqjiV4frGpGeHSBvPPQWbr0tzzNDzp+9BQ0ZG4=";
+    # 同上：按当前版本的 Cargo.lock 重算。
+    cargoHash = "sha256-DKMzkfDt2CJYqaxcm635seFJydKNNdtC69o2b2bWWUY=";
+
+    # 0.9.4 起 rust_api 依赖 global-hotkey，会走 glib-sys / gio-sys / gtk-sys，
+    # 需要 pkg-config 和 GTK3 的开发文件才能编译。
+    nativeBuildInputs = [ pkg-config ];
+    buildInputs = [ glib gtk3 ];
 
     # crate-type = ["cdylib", "staticlib"]，默认 installPhase（cargoInstallHook）
     # 是按 bin 装的，这里只收编出来的 librust_api.so。
@@ -132,7 +140,7 @@ let
     '';
   };
 in
-flutter347.buildFlutterApplication {
+flutter350.buildFlutterApplication {
   inherit pname version src;
 
   # nixpkgs 会拿 pubspec.lock 里的 `sdks.dart` 当作**根包**的 language version
