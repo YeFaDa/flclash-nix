@@ -2,8 +2,8 @@
   description = "FlClash for NixOS — 带可用的 TUN（虚拟网卡）模式";
 
   inputs = {
-    # 包依赖 flutter335，nixos-unstable 上有这个属性集（已验证）。
-    # 想锁到别的分支就改这里，或者用 inputs.flclash-tun.nixpkgs.follows 复用你自己的 nixpkgs。
+    # 打包固定使用 flutter350，nixos-unstable 上有这个属性集。
+    # 想锁到别的分支就改这里，或者用 inputs.flclash-nix.inputs.nixpkgs.follows 复用你自己的 nixpkgs。
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
